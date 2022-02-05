@@ -174,7 +174,22 @@ object init_load_transform extends App{
    * ====================================  Fin création des dataframes par pays ====================================
    * =================================================================================================================
    */
+
+  /** == CreateYoutubeDf() ==
+   * merge tout les dataframes contenu dans list
+    * @param list type Seq[DataFrame]
+   * @return DataFrame
+   */
+  def createYoutubeDf(list : Seq[DataFrame]): DataFrame = {
+    list.reduce(_ union _)
+  }
+
+  val dfs = Seq(dfUs,dfCa,dfBr,dfRu,dfDe,dfFr,dfGb,dfIn,dfJp,dfKr,dfMx)
+  val youtubeDf = createYoutubeDf(dfs)
   
+
+
+
 
 
 
