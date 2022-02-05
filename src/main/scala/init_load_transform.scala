@@ -22,6 +22,9 @@ object init_load_transform extends App{
   spark.sparkContext.setLogLevel("ERROR")
   import spark.implicits._
 
+  /** == Creation du Schema pour les fichiers CSV ==
+   *
+   */
   val schema =  new StructType()
    .add("video_id",StringType,false)
    .add("title",StringType,false)
@@ -41,76 +44,48 @@ object init_load_transform extends App{
    .add("description",StringType,false)
 
 
-
-
-
-
-  val df_video = spark.read.format("csv")
-    .option("header","true")
-    .option("multiLine", true)
-    .schema(schema)
-    .load("/Users/mamadian_djalo/Documents/ESGI/Spark_Core/Projet/4IABD_SparkCore-project/data/raw_data/BR_youtube_trending_data.csv")
-  println("================ Video =====================")
-  df_video.na.drop().show()
-
-  println("================ Categorie =====================")
-
-  val df_categorie = spark.read
-    .option("multiLine","true")
-    .json("/Users/mamadian_djalo/Documents/ESGI/Spark_Core/Projet/4IABD_SparkCore-project/data/raw_data/BR_category_id.json")
-
-  println("-----------PrintSchema Original---------------")
-  df_categorie.printSchema()
-
-  val df_categorie_unnested = df_categorie.select(col("kind"),col("etag"), explode(col("items")) as "level1")
-    .withColumn("id", col("level1.id"))
-    .withColumn("title",col("level1.snippet.title"))
-    .withColumn("assignable", col("level1.snippet.assignable"))
-    .drop("level1")
-
-  
-  /*df_categorie_unnested.select(col("kind"),col("etag"))
-    .withColumn("id", explode(col("id")))
-    .withColumn("title",explode(col("title")))
-    .show(false)*/
-
-
-
-
-
-  //val df_category_br =
-
-  /* Charge le csv et le json
-  *  Clean le csv
-  *  merge les video csv et les categ json avec  join
-  *
-  * */
-
-
-  /*def flattenJson(path:StringType): DataFrame={
-    val df_categorie = spark.read
-      .option("multiLine","true")
-      .json("/Users/mamadian_djalo/Documents/ESGI/Spark_Core/Projet/4IABD_SparkCore-project/data/raw_data/BR_category_id.json")
-
-    df_categorie.drop("kind","etag")
-  }
-  def createDf (path: StringType): DataFrame= {
-    val df = spark.read.format("csv")
+  /** == csvToDf() ==
+   * Cette fonction lit un csv, supprime les lignes qui contiennent des valeurs null et retourne un DataFrame
+   * @param path de type String
+   * @return df_video de type DataFrame
+   */
+  def csvToDf(path:String): DataFrame={
+    val df_video = spark.read.format("csv")
       .option("header","true")
       .option("multiLine", true)
       .schema(schema)
-      .load("/Users/mamadian_djalo/Documents/ESGI/Spark_Core/Projet/4IABD_SparkCore-project/data/raw_data/BR_youtube_trending_data.csv")
+      .load("/data/raw_data/BR_youtube_trending_data.csv")
 
-    df.na.drop().show()
+    df_video.na.drop()
+  }
+
+  /** == flattenJson() ==
+   * Cette fonction lit un json, l'applatie et retourne le resultat en type DataFrame
+   * @param path de type String
+   * @return df_categorie de type DataFrame
+   */
+  def flattenJson(path:String): DataFrame={
+    val df_categorie = spark.read
+      .option("multiLine","true")
+      .json(path)
+
+    val df_categorie_unnested = df_categorie.select(col("kind"),col("etag"), explode(col("items")) as "level1")
+      .withColumn("id", col("level1.id"))
+      .withColumn("title",col("level1.snippet.title"))
+      .withColumn("assignable", col("level1.snippet.assignable"))
+      .drop("level1")
+
+    df_categorie_unnested
+  }
+
+  val path_to_csv = "data/raw_data/BR_youtube_trending_data.csv"
+  val path_to_json = "data/raw_data/BR_category_id.json"
 
 
-  df_categorie.select(col("kind"),col("etag"), explode(array("items")) as "level1")
-    .withColumn("id", col("level1.id"))
-    .withColumn("title",col("level1.snippet.title"))
-    .withColumn("assignable", col("level1.snippet.assignable"))
-    .drop("level1").show(false)
 
-  }*/
+
+
+
 
 
 }
