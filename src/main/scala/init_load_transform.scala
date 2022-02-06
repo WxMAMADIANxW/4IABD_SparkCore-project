@@ -125,7 +125,7 @@ object init_load_transform extends App{
    */
   val path_to_csv_GB = "data/raw_data/GB_youtube_trending_data.csv"
   val path_to_json_GB = "data/raw_data/GB_category_id.json"
-  val dfGb = merge(csvToDf(path_to_csv_GB),flattenJson(path_to_json_GB)).withColumn("country",lit("Grand Britain"))
+  val dfGb = merge(csvToDf(path_to_csv_GB),flattenJson(path_to_json_GB)).withColumn("country",lit("Great Britain"))
 
   /**Creation DataFrame IN
    *
@@ -187,14 +187,51 @@ object init_load_transform extends App{
   val dfs = Seq(dfUs,dfCa,dfBr,dfRu,dfDe,dfFr,dfGb,dfIn,dfJp,dfKr,dfMx)
   val youtubeDf = createYoutubeDf(dfs).dropDuplicates("video_id")
 
-  println(youtubeDf.filter(col("trending_date").like("2021%")).count())
-  println(youtubeDf.filter(col("view_count")> 1000000).count())
-  println(youtubeDf.select(col("view_count")).rdd.map(_(0).asInstanceOf[Int]).reduce(_+_))
-  println(youtubeDf.count())
 
-  /*Qu'elle sont les tendance*/
+  /*
+  Début des analyses sur la problematiques suivantes : Comment percer sur Youtube ?
+  Quelle genre/ categorie performe le plus ? // Choisir le genre de video à produire
+  - Dataframe avec les colonnes suivantes : categorieTitle , Nombre de vus moyens par categorie, Nombre de like moyen par categorie, Nombre de commentaires moyens par categorie
+
+  Quelle pays à les meilleurs stats ? // Pour choisir la langue dans laquelle faire ses videos
+  - Dataframe avec les colonnes suivantes : pays , nombre de vus, nombre de likes, nombre de commentaires
+
+  Qui sont les top trend youtubeurs ? // pour prendre exemple sur les meilleurs
+  - Dataframe avec les colonnes suivantes : channelTitle, nombre de vus, average(like), average(comments)
+   */
 
 
+  /**
+   *================ Début des analyses ================
+   */
+
+
+
+  val categoryStatsDf = youtubeDf.groupBy("titleCategorie").agg(
+    round(avg("view_count")).as("avg_view_count"),
+    round(avg("likes")).as("avg_likes"),
+    round(avg("comment_count")).as("avg_comment_count")
+  ).orderBy(desc("avg_view_count"))
+
+
+  val countryStatsDf = youtubeDf.groupBy("country").agg(
+    sum("view_count").as("total_view_count"),
+    sum("likes").as("total_likes"),
+    sum("comment_count").as("total_comment_count"),
+  ).orderBy(desc("total_view_count"))
+
+  val topYoutubersDf = youtubeDf.groupBy("channelTitle").agg(
+    sum("view_count").as("total_view_count"),
+    round(avg("likes")).as("avg_likes_per_videos"),
+    sum("comment_count").as("avg_nbr_comment_per"),
+  ).orderBy(desc("total_view_count"))
+
+
+  categoryStatsDf.show()
+
+  countryStatsDf.show()
+
+  topYoutubersDf.show()
 
 
 
