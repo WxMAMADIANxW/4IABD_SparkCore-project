@@ -71,7 +71,7 @@ object init_load_transform extends App{
 
     df_categorie.select(col("kind"),col("etag"), explode(col("items")) as "level1")
       .withColumn("id", col("level1.id"))
-      .withColumn("title",col("level1.snippet.title"))
+      .withColumn("titleCategorie",col("level1.snippet.title"))
       .withColumn("assignable", col("level1.snippet.assignable"))
       .drop("level1")
   }
@@ -185,10 +185,14 @@ object init_load_transform extends App{
   }
 
   val dfs = Seq(dfUs,dfCa,dfBr,dfRu,dfDe,dfFr,dfGb,dfIn,dfJp,dfKr,dfMx)
-  val youtubeDf = createYoutubeDf(dfs)
-  
+  val youtubeDf = createYoutubeDf(dfs).dropDuplicates("video_id")
 
+  println(youtubeDf.filter(col("trending_date").like("2021%")).count())
+  println(youtubeDf.filter(col("view_count")> 1000000).count())
+  println(youtubeDf.select(col("view_count")).rdd.map(_(0).asInstanceOf[Int]).reduce(_+_))
+  println(youtubeDf.count())
 
+  /*Qu'elle sont les tendance*/
 
 
 
