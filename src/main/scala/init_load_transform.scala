@@ -8,7 +8,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Encoder, Encoders}
 import java.util.Calendar
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-
+import org.apache.spark.sql.functions.regexp_replace
 
 
 object init_load_transform extends App{
@@ -189,22 +189,32 @@ object init_load_transform extends App{
 
 
   /*
-  Début des analyses sur la problematiques suivantes : Comment percer sur Youtube ?
-  Quelle genre/ categorie performe le plus ? // Choisir le genre de video à produire
-  - Dataframe avec les colonnes suivantes : categorieTitle , Nombre de vus moyens par categorie, Nombre de like moyen par categorie, Nombre de commentaires moyens par categorie
+  Début des analyses sur la problematique suivante : Comment percer sur Youtube ?
 
-  Quelle pays à les meilleurs stats ? // Pour choisir la langue dans laquelle faire ses videos
-  - Dataframe avec les colonnes suivantes : pays , nombre de vus, nombre de likes, nombre de commentaires
+  Quel genre/categorie performe le plus ? // Choisir le genre de video à produire
+  - Dataframe avec les colonnes suivantes : categorieTitle, nombre de vues moyen par categorie,
+    nombre de likes moyen par categorie, nombre de commentaires moyen par categorie
 
-  Qui sont les top trend youtubeurs ? // pour prendre exemple sur les meilleurs
+  Quel pays a les meilleurs statistiques ? // Pour choisir la langue dans laquelle faire ses videos
+  - Dataframe avec les colonnes suivantes : pays, nombre de vues, nombre de likes, nombre de commentaires
+
+  Qui sont les top trend youtubeurs ? // Pour prendre exemple sur les meilleurs
   - Dataframe avec les colonnes suivantes : channelTitle, nombre de vus, average(like), average(comments)
-   */
 
+  Quel est le meilleur jour pour mettre en ligne une vidéo ? // Soyons stratégiques jusqu'au bout
+  - Dataframe avec les colonnes suivantes : jour de la semaine, nombre moyen de vues, de likes et de nombre de commentaires
+
+  Zoom sur la France :
+  - Ses 10 vidéos les plus vues dans le top trend
+    • Dataframe avec le nom de la chaîne, le titre de la vidéo, le nombre de vues, likes, commentaires et le titre de la catégorie
+  - Ses catégories les les regardées
+    • Dataframe avec le titre de la catégorie,le nombre moyen de vues, likes et commentaires
+
+   */
 
   /**
    *================ Début des analyses ================
    */
-
 
 
   val categoryStatsDf = youtubeDf.groupBy("titleCategorie").agg(
@@ -213,34 +223,56 @@ object init_load_transform extends App{
     round(avg("comment_count")).as("avg_comment_count")
   ).orderBy(desc("avg_view_count"))
 
-
   val countryStatsDf = youtubeDf.groupBy("country").agg(
     sum("view_count").as("total_view_count"),
     sum("likes").as("total_likes"),
     sum("comment_count").as("total_comment_count"),
   ).orderBy(desc("total_view_count"))
 
+  // formatage de la date de sortie de la vidéo
+  val dayRegexStatsDf = youtubeDf.withColumn("publishedAt", regexp_replace(youtubeDf("publishedAt"), "T", " "))
+  // récupération du jour de la semaine
+  val dayWeekStatsDf = dayRegexStatsDf.withColumn("week_day", date_format(col("publishedAt"), "EEEE"))
+
+  val dayStatsDf = dayWeekStatsDf.groupBy("week_day").agg(
+    round(avg("view_count")).as("avg_view_count"),
+    round(avg("likes")).as("avg_likes"),
+    round(avg("comment_count")).as("avg_comment_count")
+  ).orderBy(desc("avg_view_count"))
+
   val topYoutubersDf = youtubeDf.groupBy("channelTitle").agg(
     sum("view_count").as("total_view_count"),
     round(avg("likes")).as("avg_likes_per_videos"),
-    sum("comment_count").as("avg_nbr_comment_per"),
+    sum("comment_count").as("avg_nbr_comment_per_videos"),
   ).orderBy(desc("total_view_count"))
 
+  val franceTop10StatsDf = dfFr.select("channelTitle", "title", "view_count", "likes", "comment_count", "titleCategorie", "country")
+    .orderBy(desc("view_count"))
+    .limit(10)
 
+  val franceCategoryStatsDf = dfFr.groupBy("titleCategorie").agg(
+    round(avg("view_count")).as("avg_view_count"),
+    round(avg("likes")).as("avg_likes"),
+    round(avg("comment_count")).as("avg_comment_count")
+  ).orderBy(desc("avg_view_count")).limit(10)
+
+  println("\nCATÉGORIES À PRIVILÉGIER\n")
   categoryStatsDf.show()
 
+  println("\nPAYS À PRIVILÉGIER\n")
   countryStatsDf.show()
 
-  topYoutubersDf.show()
+  println("\nJOURS À PRIVILÉGIER\n")
+  dayStatsDf.show()
 
+  println("\nLES MEILLEURS YOUTUBERS DANS LE MONDE\n")
+  countryStatsDf.show()
 
+  println("\nZOOM FRANCE : LE TOP 10 DES VIDÉOS\n")
+  franceTop10StatsDf.show()
 
-
-
-
-
-
-
+  println("\nZOOM FRANCE : LE TOP 10 DES CATÉGORIES\n")
+  franceCategoryStatsDf.show()
 
 }
 
