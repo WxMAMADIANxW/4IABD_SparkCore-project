@@ -22,6 +22,7 @@ object init_load_transform extends App{
   spark.sparkContext.setLogLevel("ERROR")
   import spark.implicits._
 
+
   /** == Creation du Schema pour les fichiers CSV ==
    *
    */
@@ -88,7 +89,7 @@ object init_load_transform extends App{
 
   /**
    * =================================================================================================================
-   * ====================================  Début création des dataframes par pays ====================================
+   * ====================================  Début création des dataframes par pays ==================================== 
    * =================================================================================================================
    */
 
@@ -274,5 +275,8 @@ object init_load_transform extends App{
   println("\nZOOM FRANCE : LE TOP 10 DES CATÉGORIES\n")
   franceCategoryStatsDf.show()
 
+    /*Spark UI*/
+  System.in.read();
+  spark.stop();
 }
 
