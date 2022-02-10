@@ -9,6 +9,14 @@ libraryDependencies += "org.apache.spark" %% "spark-core" % "3.1.2"
 
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.1.2"
 
-Attention il faut télécharger le dataset à l'adresse suivante : https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=US_youtube_trending_data.csv
+Attention Pour le bon fonctionnement du projet suivre les step suivantes 
 
-Il faut le dézipper et placer les fichers json et csv dans le folder data/raw_data
+Step 1:
+il faut télécharger le dataset à l'adresse suivante : 
+https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=US_youtube_trending_data.csv
+
+Step 2:
+Il faut créer un folder raw_data dans le folder data.
+
+Step3 : 
+Dezipper le dataset téléchargé et placer les fichiers json et csv dans raw_data.
